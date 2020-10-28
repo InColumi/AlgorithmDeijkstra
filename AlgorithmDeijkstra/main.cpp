@@ -2,7 +2,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <map>
+#include <time.h>
 
 using namespace std;
 
@@ -10,6 +10,7 @@ class Algorithm
 {
 	private:
 	vector<vector<int>> _matrix;
+	vector<vector<int>> _matrixDeijkstra;
 	vector<int> _weightPaths;
 	vector<int> _path;
 	int _size;
@@ -28,6 +29,7 @@ class Algorithm
 		CheckNumberVertex(endVertex);
 		Solve(startVertex, endVertex);
 
+		ShowInfo(_matrixDeijkstra);
 		cout << "All min paths from:\n";
 		for(int i = 0; i < _size; i++)
 		{
@@ -44,6 +46,7 @@ class Algorithm
 			cout << _path[i] + 1 << " => ";
 		}
 		cout << _path[0] + 1 << '\n';
+		_matrixDeijkstra.clear();
 		_weightPaths.clear();
 		_path.clear();
 	}
@@ -59,7 +62,8 @@ class Algorithm
 		_path.push_back(indexEndVertex);
 
 		vector<int> allVertexesFromEndVertex;
-		while(true)
+		int countLoop = 0;
+		while(countLoop <= 999999)
 		{
 			for(int i = 0; i < _size; i++)
 			{
@@ -87,8 +91,13 @@ class Algorithm
 				break;
 			}
 			allVertexesFromEndVertex.clear();
+			countLoop++;
 		}
-
+		if(countLoop >= 999999)
+		{
+			cout << "Loop\n";
+			exit(0);
+		}
 	}
 
 	void Solve(int startVertex, int endVertex)
@@ -98,10 +107,10 @@ class Algorithm
 		_weightPaths = vector<int>(_size);
 		_weightPaths[0] = startVertex;
 
-		vector<vector<int>> matrixDeijkstra;
+		_matrixDeijkstra;
 		for(int i = 0; i < _size; i++)
 		{
-			matrixDeijkstra.push_back(vector<int>(_size));
+			_matrixDeijkstra.push_back(vector<int>(_size));
 		}
 
 		int countIter = 1;
@@ -131,20 +140,20 @@ class Algorithm
 				}
 				int matr = _matrix[oldPath.back()][i];
 				nextValue = minWeight + matr;
-				prevValue = matrixDeijkstra[countIter - 1][i];
+				prevValue = _matrixDeijkstra[countIter - 1][i];
 				if(matr != 0)
 				{
-					matrixDeijkstra[countIter][i] = (Compea(prevValue, nextValue)) ? nextValue : prevValue;
+					_matrixDeijkstra[countIter][i] = (Compea(prevValue, nextValue)) ? nextValue : prevValue;
 				}
 				else
 				{
-					matrixDeijkstra[countIter][i] = prevValue;
+					_matrixDeijkstra[countIter][i] = prevValue;
 				}
 			}
 
 
-			nameMinVertex = GetIndexMin(matrixDeijkstra[countIter]);
-			minWeight = matrixDeijkstra[countIter][nameMinVertex];
+			nameMinVertex = GetIndexMin(_matrixDeijkstra[countIter]);
+			minWeight = _matrixDeijkstra[countIter][nameMinVertex];
 			oldPath.push_back(nameMinVertex);
 			countIter++;
 		}
@@ -156,7 +165,7 @@ class Algorithm
 			{
 				if(i != j)
 				{
-					value = matrixDeijkstra[j][i];
+					value = _matrixDeijkstra[j][i];
 					if(value == 0)
 					{
 						continue;
@@ -300,21 +309,59 @@ class Algorithm
 	}
 };
 
-int main()
+void GenegateMatrix(string fileName, int sizeMatrix, int maxValue = 999999)
 {
-	Algorithm algorithDeixtry("matrix.txt");
-	algorithDeixtry.ShowMinPath(7, 5);
-
-	for(int i = 1; i <= 10; i++)
+	srand(time(0));
+	ofstream  out;
+	out.open(fileName);
+	out << sizeMatrix << '\n';
+	char space;
+	int number;
+	for(int i = 0; i < sizeMatrix; i++)
 	{
-		for(int j = 1; j <= 10; j++)
-		{
-			if(i != j)
+		for(int j = 0; j < sizeMatrix; j++)
+		{			
+			number = (0 + rand() % maxValue);
+			if(j != sizeMatrix - 1)
 			{
-				algorithDeixtry.ShowMinPath(i, j);
+				if(i != j)
+				{
+					out << number << ' ';
+				}
+				else
+				{
+					out << 0 << ' ';
+				}
 			}
+			else
+			{
+				if(i != j)
+				{
+					out << number;
+				}
+				else
+				{
+					out << 0;
+				}
+			}
+			
+		}
+		if(i != sizeMatrix - 1)
+		{
+			out << '\n';
 		}
 	}
+	out.close();
+}
+
+int main(int argc, char* argv[])
+{
+	int size = 5;
+	string name = "rand.txt";
+	//GenegateMatrix(name, size, 100);
+	//Algorithm algorithDeixtry("matrix.txt");
+	Algorithm algorithDeixtry(name);
+	algorithDeixtry.ShowMinPath(1, size);
 	return 0;
 }
 
