@@ -59,7 +59,33 @@ class Algorithm
 		cout << _path[0] + 1 << '\n';
 	}
 
+	void ShowCenterGraf()
+	{
+		int* maxValueInRows = new int[_size];
+		for(size_t i = 0; i < _size; i++)
+		{
+			maxValueInRows[i] = GetMaxValueInRow(_matrix[i]);
+		}
+
+		int indexCenterGraf = GetIndexMin(maxValueInRows);
+		cout << "Center graf: " << indexCenterGraf + 1 << '\n';
+		delete[] maxValueInRows;
+	}
+
 	private:
+
+	int GetMaxValueInRow(int*& row)
+	{
+		int max = row[0];
+		for(size_t i = 1; i < _size; i++)
+		{
+			if(max < row[i])
+			{
+				max = row[i];
+			}
+		}
+		return max;
+	}
 
 	void MakePath(int startVertex, int endVertex)
 	{
@@ -346,7 +372,7 @@ void GenegateMatrix(string fileName, int sizeMatrix, int maxValue = 999999)
 	for(int i = 0; i < sizeMatrix; i++)
 	{
 		for(int j = 0; j < sizeMatrix; j++)
-		{			
+		{
 			number = (0 + rand() % maxValue);
 			if(j != sizeMatrix - 1)
 			{
@@ -370,7 +396,7 @@ void GenegateMatrix(string fileName, int sizeMatrix, int maxValue = 999999)
 					out << 0;
 				}
 			}
-			
+
 		}
 		if(i != sizeMatrix - 1)
 		{
@@ -388,6 +414,7 @@ int main(int argc, char* argv[])
 	Algorithm algorithDeixtry("matrix.txt");
 	//Algorithm algorithDeixtry(name);
 	algorithDeixtry.ShowMinPath(1, 7);
+	algorithDeixtry.ShowCenterGraf();
 	return 0;
 }
 
