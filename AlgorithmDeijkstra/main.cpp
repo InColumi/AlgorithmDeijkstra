@@ -194,7 +194,7 @@ class Algorithm
 			oldPath.push_back(nameMinVertex);
 			countIter++;
 		}
-		ShowMatrix(_matrixDeijkstra);
+
 		int value;
 		for(int i = 0; i < _size; i++)
 		{
