@@ -9,18 +9,29 @@ using namespace std;
 class Algorithm
 {
 	private:
-	vector<vector<int>> _matrix;
-	vector<vector<int>> _matrixDeijkstra;
-	vector<int> _weightPaths;
+	size_t _size;
+	int** _matrix;
+	int** _matrixDeijkstra;
+	int* _weightPaths;
 	vector<int> _path;
-	int _size;
 
 	public:
 
 	Algorithm(string fileName)
 	{
 		ReadFromFile(fileName);
-		ShowInfo(_matrix);
+	}
+
+	~Algorithm()
+	{
+		for(size_t i = 0; i < _size; i++)
+		{
+			delete[]_matrix[i];
+			delete[] _matrixDeijkstra[i];
+		}
+		delete[]_matrix;
+		delete[] _matrixDeijkstra;
+		delete[] _weightPaths;
 	}
 
 	void ShowMinPath(int startVertex, int endVertex)
@@ -29,7 +40,7 @@ class Algorithm
 		CheckNumberVertex(endVertex);
 		Solve(startVertex, endVertex);
 
-		ShowInfo(_matrixDeijkstra);
+		ShowMatrix(_matrixDeijkstra);
 		cout << "All min paths from:\n";
 		for(int i = 0; i < _size; i++)
 		{
@@ -46,9 +57,6 @@ class Algorithm
 			cout << _path[i] + 1 << " => ";
 		}
 		cout << _path[0] + 1 << '\n';
-		_matrixDeijkstra.clear();
-		_weightPaths.clear();
-		_path.clear();
 	}
 
 	private:
@@ -79,14 +87,21 @@ class Algorithm
 			{
 				index = allVertexesFromEndVertex[i];
 				weightFromMatrix = _matrix[_path.back()][index];
-				if(weight - weightFromMatrix == _weightPaths[index])
+				if(weight - weightFromMatrix == 0)
 				{
 					weight -= weightFromMatrix;
 					_path.push_back(index);
+					break;
+				}
+				else if(weight - weightFromMatrix == _weightPaths[index])
+				{
+					weight -= weightFromMatrix;
+					_path.push_back(index);
+					break;
 				}
 			}
-			index = _path.back();
-			if(_matrix[index][indexStartVertex] == _weightPaths[index])
+
+			if(weight == 0)
 			{
 				break;
 			}
@@ -104,14 +119,10 @@ class Algorithm
 	{
 		int indexStartVertex = startVertex - 1;
 		int indexEndVertex = endVertex - 1;
-		_weightPaths = vector<int>(_size);
+		_weightPaths = new int[_size];
 		_weightPaths[0] = startVertex;
 
-		_matrixDeijkstra;
-		for(int i = 0; i < _size; i++)
-		{
-			_matrixDeijkstra.push_back(vector<int>(_size));
-		}
+		SetValue(_matrixDeijkstra);
 
 		int countIter = 1;
 		int minWeight = 0;
@@ -121,6 +132,7 @@ class Algorithm
 
 		int nextValue;
 		int prevValue;
+		int matr;
 		while(oldPath.size() != _size)
 		{
 			for(int i = 0; i < _size; i++)
@@ -138,7 +150,7 @@ class Algorithm
 				{
 					continue;
 				}
-				int matr = _matrix[oldPath.back()][i];
+				matr = _matrix[oldPath.back()][i];
 				nextValue = minWeight + matr;
 				prevValue = _matrixDeijkstra[countIter - 1][i];
 				if(matr != 0)
@@ -150,14 +162,13 @@ class Algorithm
 					_matrixDeijkstra[countIter][i] = prevValue;
 				}
 			}
-
-
 			nameMinVertex = GetIndexMin(_matrixDeijkstra[countIter]);
+
 			minWeight = _matrixDeijkstra[countIter][nameMinVertex];
 			oldPath.push_back(nameMinVertex);
 			countIter++;
 		}
-
+		ShowMatrix(_matrixDeijkstra);
 		int value;
 		for(int i = 0; i < _size; i++)
 		{
@@ -180,53 +191,53 @@ class Algorithm
 		}
 	}
 
-	void SetMatrix(int**& matr, int value = 0)
+	void SetValue(int**& matrix, int value = 0)
 	{
-		for(int i = 0; i < _size; i++)
+		for(size_t i = 0; i < _size; i++)
 		{
-			for(int j = 0; j < _size; j++)
+			for(size_t j = 0; j < _size; j++)
 			{
-				matr[i][j] = value;
+				matrix[i][j] = value;
 			}
 		}
 	}
 
-	bool Compea(int prev, int next)
+	bool Compea(int prev, int next, int infinity = 0)
 	{
-		if(prev == 0 && next == 0)
+		if(prev == infinity && next == infinity)
 		{
 			return false;
 		}
 
-		if(next == 0 || prev == 0)
+		if(next == infinity || prev == infinity)
 		{
-			return (next == 0) ? false : true;
+			return (next == infinity) ? false : true;
 		}
 
 		return (prev < next) ? false : true;
 	}
 
-	int GetIndexMin(vector<int> v)
+	int GetIndexMin(int*& line)
 	{
-		int index = GetIndexNotNull(v);
-		int min = v[index];
+		int index = GetIndexNotNull(line);
+		int min = line[index];
 		int minIndex = index;
-		for(size_t i = index + 1; i < v.size(); i++)
+		for(size_t i = index + 1; i < _size; i++)
 		{
-			if(min > v[i] && v[i] != 0)
+			if(min > line[i] && line[i] != 0)
 			{
-				min = v[i];
+				min = line[i];
 				minIndex = i;
 			}
 		}
 		return minIndex;
 	}
 
-	int GetIndexNotNull(vector<int> v)
+	int GetIndexNotNull(int*& line)
 	{
-		for(size_t i = 0; i < v.size(); i++)
+		for(size_t i = 0; i < _size; i++)
 		{
-			if(v[i] != 0)
+			if(line[i] != 0)
 			{
 				return i;
 			}
@@ -261,51 +272,66 @@ class Algorithm
 		string line;
 		getline(in, line);
 		_size = stoi(line);
+		MemorryAllocation();
 
-		while(getline(in, line))
+		int size;
+		int row = 0;
+
+		string* numbers = new string[_size];
+		while(getline(in, line, '\n'))
 		{
-			vector<int> row;
-			for(size_t i = 0; i < line.size(); i++)
+			Split(numbers, line);
+			for(size_t i = 0; i < _size; i++)
 			{
-				size_t endNumbmer = line.find(' ');
-				if(endNumbmer == -1)
-				{
-					endNumbmer = line.size();
-				}
-				string s;
-				for(size_t j = 0; j < endNumbmer; j++)
-				{
-					s.push_back(line[j]);
-				}
-				row.push_back(stoi(s));
-				string newLine;
-				for(size_t j = endNumbmer + 1; j < line.size(); j++)
-				{
-					newLine.push_back(line[j]);
-				}
-				line = newLine;
-				if(line.size() == 1)
-				{
-					row.push_back(stoi(line));
-				}
-				i = 0;
+				_matrix[row][i] = stoi(numbers[i]);
 			}
-			_matrix.push_back(row);
+			row++;
 		}
+		delete[] numbers;
 		in.close();
 	}
 
-	void ShowInfo(vector<vector<int>> matr)
+	void Split(string*& numbers, string line, char s = ' ')
 	{
-		for(int i = 0; i < _size; i++)
+		size_t size = line.size();
+		string temp = "";
+		int index = 0;
+		for(size_t i = 0; i < size; i++)
 		{
-			for(int j = 0; j < _size; j++)
+			if(s == line[i])
 			{
-				cout << matr[i][j] << "\t";
+				numbers[index++] = temp;
+				temp = "";
+			}
+			else
+			{
+				temp += line[i];
+			}
+		}
+		numbers[index] = temp;
+	}
+
+	void ShowMatrix(int**& matr)
+	{
+		for(size_t i = 0; i < _size; i++)
+		{
+			for(size_t j = 0; j < _size; j++)
+			{
+				cout << matr[i][j] << '\t';
 			}
 			cout << '\n';
 		}
-		cout << '\n';
+	}
+
+	void MemorryAllocation()
+	{
+		_matrix = new int* [_size];
+		_matrixDeijkstra = new int* [_size];
+		for(size_t i = 0; i < _size; i++)
+		{
+			_matrix[i] = new int[_size];
+			_matrixDeijkstra[i] = new int[_size];
+		}
 	}
 };
 
@@ -357,11 +383,11 @@ void GenegateMatrix(string fileName, int sizeMatrix, int maxValue = 999999)
 int main(int argc, char* argv[])
 {
 	int size = 5;
-	string name = "rand.txt";
-	//GenegateMatrix(name, size, 100);
-	//Algorithm algorithDeixtry("matrix.txt");
-	Algorithm algorithDeixtry(name);
-	algorithDeixtry.ShowMinPath(1, size);
+	//string name = "rand.txt";
+	//GenegateMatrix(name, size, 10);
+	Algorithm algorithDeixtry("matrix.txt");
+	//Algorithm algorithDeixtry(name);
+	algorithDeixtry.ShowMinPath(1, 7);
 	return 0;
 }
 
